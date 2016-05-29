@@ -28,6 +28,6 @@ repositories {
 
 dependencies {
   compile fileTree(dir: 'libs', include: ['*.jar'])
-  compile project(':dialogplus')
+  compile project(':library')
   compile 'com.android.support:appcompat-v7:21.0.3'
 }
