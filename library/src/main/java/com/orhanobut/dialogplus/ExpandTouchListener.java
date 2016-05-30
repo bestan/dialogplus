@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.animation.Animation;
 import android.widget.AbsListView;
 import android.widget.FrameLayout;
+import android.widget.GridView;
 
 class ExpandTouchListener implements View.OnTouchListener {
 
@@ -54,6 +55,12 @@ class ExpandTouchListener implements View.OnTouchListener {
    */
   private FrameLayout.LayoutParams params;
 
+  /**
+   * Used to determine whether ACTION_DOWN events should be passed to the ListView or not
+   * Fixes https://github.com/orhanobut/dialogplus/issues/72
+   */
+  private boolean isGrid;
+
   public static ExpandTouchListener newListener(Context context, AbsListView listView, View container,
                                                 int gravity, int displayHeight, int defaultContentHeight) {
     return new ExpandTouchListener(context, listView, container, gravity, displayHeight, defaultContentHeight);
@@ -62,6 +69,7 @@ class ExpandTouchListener implements View.OnTouchListener {
   private ExpandTouchListener(Context context, AbsListView absListView, View container, int gravity,
                               int displayHeight, int defaultContentHeight) {
     this.absListView = absListView;
+    this.isGrid = absListView instanceof GridView;
     this.contentContainer = container;
     this.gravity = gravity;
     this.displayHeight = displayHeight;
@@ -95,7 +103,9 @@ class ExpandTouchListener implements View.OnTouchListener {
     switch (event.getAction()) {
       case MotionEvent.ACTION_DOWN:
         y = event.getRawY();
-        return true;
+
+        // GridView onItemClick doesn't properly work if ACTION_DOWN event isn't passed to it (#72)
+        return !isGrid;
       case MotionEvent.ACTION_MOVE:
         // This is a quick fix to not trigger click event
         if (params.height == displayHeight) {
@@ -103,6 +113,12 @@ class ExpandTouchListener implements View.OnTouchListener {
           contentContainer.setLayoutParams(params);
           return false;
         }
+
+        // Remove focus if GridView is being dragged (#72)
+        if (isGrid) {
+          absListView.clearFocus();
+        }
+
         onTouchMove(v, event);
         break;
       case MotionEvent.ACTION_UP:
